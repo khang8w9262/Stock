@@ -122,32 +122,26 @@ def update_plot(event, dataset, start_date=None, end_date=None, show_predictions
         print(f"Error in update_plot: {str(e)}")
         print(f"Traceback: {traceback.format_exc()}")
         return None
-                    for ax in self.ax_options:
-                        ax.set_visible(False)
-                    plt.draw()
-                    self._process_observers()
-                    break
-    
-    def on_changed(self, func):
-        self.observers[func] = func
-        
-    def _process_observers(self):
-        for func in self.observers.values():
-            func(self.options[self.current_option])
-            
-    def set_visible(self, visible):
-        self.ax_main.set_visible(visible)
-        if not visible:
-            self.expanded = False
-            for ax in self.ax_options:
-                ax.set_visible(False)
-        plt.draw()
 
-# ---------------------------
-# Initialize Tkinter root for loading window and error messages
-# ---------------------------
-root = tk.Tk()
-root.withdraw()
+# Function to check if models exist and are valid
+def check_models_exist(stock_name):
+    """Check if all required models exist for a stock"""
+    models_dir = os.path.join(BASE_DIR, 'models')
+    required_files = [
+        f'{stock_name}_rf_model.joblib',
+        f'{stock_name}_xgb_model.joblib',
+        f'{stock_name}_lgb_model.joblib',
+        f'{stock_name}_dt_model.joblib',
+        f'{stock_name}_scaler.joblib',
+        f'{stock_name}_feature_order.joblib'
+    ]
+    
+    missing_files = []
+    for file in required_files:
+        if not os.path.exists(os.path.join(models_dir, file)):
+            missing_files.append(file)
+    
+    return len(missing_files) == 0
 
 # ---------------------------
 # Create a queue for communication between threads
@@ -627,16 +621,8 @@ def update_plot(event, dataset, start_date=None, end_date=None, show_predictions
             df_display = df_display[(df_display['Date'] >= start_date) & (df_display['Date'] <= end_date)]
             print(f"Filtered display data: {len(df_display)} rows")
 
-        # Create figure with larger size
-        plt.clf()
-        fig = plt.figure(figsize=(15, 8))
-        ax = fig.add_subplot(111)
-        
-        # Set dark theme if requested
-        if dark_theme:
-            plt.style.use('dark_background')
-            ax.set_facecolor('#2d2d2d')
-            fig.patch.set_facecolor('#2d2d2d')
+        # Create Plotly figure
+        fig = go.Figure()
 
         # Plot actual prices
         ax.plot(df_display['Date'], df_display['Lần cuối'], 
@@ -901,6 +887,10 @@ def update_plot_with_baodautu(stock_name, baodautu_predictions, start_date=None,
         file_path_display = os.path.join(VE_DIR, f"{stock_name}_TT.csv")
         df_display = pd.read_csv(file_path_display)
         df_display['Date'] = pd.to_datetime(df_display['Ngày'], format='%d/%m/%Y')
+        
+        # Filter by date range if provided
+        if start_date and end_date:
+            df_display = df_display[(df_display['Date'] >= start_date) & (df_display['Date'] <= end_date)]
 
         # Create figure
         fig = go.Figure()
@@ -1695,10 +1685,15 @@ def check_models_features(model_name, dataset, features):
         print(f"Lỗi khi kiểm tra features của mô hình {model_name}: {e}")
         return False
 
-# Thêm vào cuối file, trước plt.show()
-calculate_system_metrics()
+# Initialize necessary paths
+def init():
+    """Initialize necessary paths and configurations"""
+    global BASE_DIR, TRAIN_DIR, VE_DIR, MODELS_DIR
+    
+    # Ensure directories exist
+    for dir_path in [TRAIN_DIR, VE_DIR, MODELS_DIR]:
+        if not os.path.exists(dir_path):
+            os.makedirs(dir_path)
+            print(f"Created directory: {dir_path}")
 
-# Clear models directory at startup
-clear_models_directory()
-
-plt.show()
+init()
