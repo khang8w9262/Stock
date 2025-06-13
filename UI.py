@@ -3,25 +3,16 @@ sys.stdout.reconfigure(encoding='utf-8')
 
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
-import mplcursors
-import matplotlib.dates
-from matplotlib.widgets import Button, TextBox, RadioButtons
+import plotly.graph_objects as go
 import warnings
-import threading
-import tkinter as tk
-from tkinter import messagebox
-from tkinter import ttk
-import queue
 import os
-import matplotlib.dates as mdates
 import traceback
 from scipy.interpolate import make_interp_spline, PchipInterpolator
-from tqdm import tqdm
-import json  # Thêm dòng này
+import json
+from datetime import datetime
 
 # Đường dẫn tuyệt đối
-BASE_DIR = 'D:\\NghienCuu\\Stock'
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 # Đường dẫn các thư mục
 TRAIN_DIR = os.path.join(BASE_DIR, 'Train')
@@ -53,57 +44,7 @@ from sklearn.metrics import (mean_absolute_percentage_error,
                              r2_score)
 import xgboost as xgb
 
-# Add DropdownMenu from matplotlib
-from matplotlib.widgets import AxesWidget
-class DropdownMenu(AxesWidget):
-    def __init__(self, ax, options, initial=0, label="", width=0.15, height=0.025,
-                 color='0.95', hovercolor='0.75', fontsize=10):
-        AxesWidget.__init__(self, ax)
-        self.options = options
-        self.current_option = initial
-        self.label = label
-        self.width = width
-        self.height = height
-        self.color = color
-        self.hovercolor = hovercolor
-        self.fontsize = fontsize
-        self.expanded = False
-        self.observers = {}
-        
-        self._create_buttons()
-        self.connect_event('button_press_event', self._on_click)
-        
-    def _create_buttons(self):
-        # Main button
-        self.ax_main = plt.axes([self.ax.get_position().x0, 
-                                 self.ax.get_position().y0 + self.ax.get_position().height - self.height,
-                                 self.width, self.height])
-        self.main_button = Button(self.ax_main, f"{self.label}{self.options[self.current_option]}", 
-                                 color=self.color, hovercolor=self.hovercolor)
-        self.main_button.label.set_fontsize(self.fontsize)
-        
-        # Option buttons (initially hidden)
-        self.ax_options = []
-        self.option_buttons = []
-        for i, option in enumerate(self.options):
-            ax_opt = plt.axes([self.ax.get_position().x0, 
-                              self.ax.get_position().y0 + self.ax.get_position().height - self.height*(i+2),
-                              self.width, self.height])
-            btn = Button(ax_opt, option, color=self.color, hovercolor=self.hovercolor)
-            btn.label.set_fontsize(self.fontsize)
-            self.ax_options.append(ax_opt)
-            self.option_buttons.append(btn)
-            ax_opt.set_visible(False)
-            
-    def _on_click(self, event):
-        if event.inaxes == self.ax_main:
-            # Toggle dropdown
-            self.expanded = not self.expanded
-            for ax in self.ax_options:
-                ax.set_visible(self.expanded)
-            plt.draw()
-        elif self.expanded:
-            for i, ax in enumerate(self.ax_options):
+# Định nghĩa các hàm vẽ đồ thị và cập nhật cho Streamlit
                 if event.inaxes == ax:
                     self.current_option = i
                     self.main_button.label.set_text(f"{self.label}{self.options[i]}")
