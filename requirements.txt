@@ -1,20 +1,31 @@
-streamlit==1.22.0
-pandas==1.5.3
-numpy==1.23.5
-matplotlib==3.6.3
-scikit-learn==1.2.2
-xgboost==1.7.6
-lightgbm==3.3.5
-requests==2.28.2
-beautifulsoup4==4.11.2
-plotly==5.13.1
-mplcursors==0.5.2
-joblib==1.2.0
-tqdm==4.65.0
-scipy==1.10.1
+# Core Data Science Libraries
+streamlit==1.20.0
+pandas==1.5.0
+numpy==1.21.0
+scipy==1.7.3
 
-# Additional dependencies
+# Machine Learning
+scikit-learn==1.0.2
+xgboost==1.6.2
+lightgbm==3.3.2
+joblib==1.1.0
+
+# Visualization
+matplotlib==3.5.2
+plotly==5.10.0
+mplcursors==0.4
+
+# Web Scraping & API
+requests==2.28.1
+beautifulsoup4==4.11.1
+selenium==4.1.0
+
+# Date and Time
 python-dateutil==2.8.2
-pytz==2023.3
-six==1.16.0
-bs4==0.0.1
+pytz==2022.7
+
+# GUI
+tk==0.1.0
+
+# Other Dependencies
+tqdm==4.64.1
