@@ -45,10 +45,83 @@ from sklearn.metrics import (mean_absolute_percentage_error,
 import xgboost as xgb
 
 # Định nghĩa các hàm vẽ đồ thị và cập nhật cho Streamlit
-                if event.inaxes == ax:
-                    self.current_option = i
-                    self.main_button.label.set_text(f"{self.label}{self.options[i]}")
-                    self.expanded = False
+def update_plot(event, dataset, start_date=None, end_date=None, show_predictions=False, dark_theme=False):
+    """Cập nhật biểu đồ với dữ liệu mới"""
+    try:
+        print(f"\nStarting to update plot for {dataset}")
+        
+        # Build file paths
+        file_path_train = os.path.join(TRAIN_DIR, f"{dataset}.csv")
+        file_path_display = os.path.join(VE_DIR, f"{dataset}_TT.csv")
+        
+        print(f"Checking files:\n- Train: {file_path_train}\n- Display: {file_path_display}")
+        
+        # Validate files exist
+        if not os.path.exists(file_path_train):
+            raise FileNotFoundError(f"Train file not found: {file_path_train}")
+        if not os.path.exists(file_path_display):
+            raise FileNotFoundError(f"Display file not found: {file_path_display}")
+
+        # Read data
+        df_train = pd.read_csv(file_path_train)
+        df_display = pd.read_csv(file_path_display)
+
+        # Convert dates
+        df_train['Date'] = pd.to_datetime(df_train['Ngày'], format='%d/%m/%Y')
+        df_display['Date'] = pd.to_datetime(df_display['Ngày'], format='%d/%m/%Y')
+
+        # Filter by date range if provided
+        if start_date and end_date:
+            df_display = df_display[(df_display['Date'] >= start_date) & (df_display['Date'] <= end_date)]
+
+        # Create figure
+        fig = go.Figure()
+
+        # Add actual prices
+        fig.add_trace(go.Scatter(
+            x=df_display['Date'],
+            y=df_display['Lần cuối'],
+            name='Giá thực tế',
+            line=dict(color='blue', width=2)
+        ))
+
+        # Add predictions if requested
+        if show_predictions:
+            models = load_models(dataset)
+            colors = {'rf': 'red', 'xgb': 'orange', 'lgb': 'green', 'dt': 'purple'}
+            
+            for model_name, model in models.items():
+                predictions = get_predictions(model, df_display, dataset)
+                if predictions is not None and len(predictions) > 0:
+                    fig.add_trace(go.Scatter(
+                        x=df_display['Date'][-len(predictions):],
+                        y=predictions,
+                        name=f'Dự báo {model_name.upper()}',
+                        line=dict(color=colors.get(model_name, 'gray'), dash='dash')
+                    ))
+
+        # Update layout
+        fig.update_layout(
+            title=f'Biểu đồ giá {dataset}',
+            xaxis_title='Ngày',
+            yaxis_title='Giá',
+            template='plotly_dark' if dark_theme else 'plotly_white',
+            showlegend=True,
+            legend=dict(
+                yanchor="top",
+                y=0.99,
+                xanchor="left",
+                x=1.05
+            ),
+            margin=dict(r=150)
+        )
+
+        return fig
+
+    except Exception as e:
+        print(f"Error in update_plot: {str(e)}")
+        print(f"Traceback: {traceback.format_exc()}")
+        return None
                     for ax in self.ax_options:
                         ax.set_visible(False)
                     plt.draw()
@@ -822,10 +895,55 @@ def apply_baodautu_worker(stock_name, loading_root, start_date=None, end_date=No
         update_queue.put(lambda: safe_destroy(loading_root))
 
 def update_plot_with_baodautu(stock_name, baodautu_predictions, start_date=None, end_date=None, dark_theme=False):
-    """
-    Update chart with forecast data from Báo Đầu Tư combined with ML model
-    """
-    global current_dataset, last_annotation, motion_cid, metrics_supplement, metrics_normal, metrics_future, error_df
+    """Update chart with forecast data from Báo Đầu Tư combined with ML model"""
+    try:
+        # Read display data
+        file_path_display = os.path.join(VE_DIR, f"{stock_name}_TT.csv")
+        df_display = pd.read_csv(file_path_display)
+        df_display['Date'] = pd.to_datetime(df_display['Ngày'], format='%d/%m/%Y')
+
+        # Create figure
+        fig = go.Figure()
+
+        # Add actual prices
+        fig.add_trace(go.Scatter(
+            x=df_display['Date'],
+            y=df_display['Lần cuối'],
+            name='Giá thực tế',
+            line=dict(color='blue', width=2)
+        ))
+
+        # Add Báo Đầu Tư predictions
+        dates, prices = zip(*baodautu_predictions)
+        fig.add_trace(go.Scatter(
+            x=dates,
+            y=prices,
+            name='Dự báo Báo Đầu Tư',
+            line=dict(color='red', dash='dash')
+        ))
+
+        # Update layout
+        fig.update_layout(
+            title=f'Biểu đồ giá {stock_name} với dự báo từ Báo Đầu Tư',
+            xaxis_title='Ngày',
+            yaxis_title='Giá',
+            template='plotly_dark' if dark_theme else 'plotly_white',
+            showlegend=True,
+            legend=dict(
+                yanchor="top",
+                y=0.99,
+                xanchor="left",
+                x=1.05
+            ),
+            margin=dict(r=150)
+        )
+
+        return fig
+
+    except Exception as e:
+        print(f"Error in update_plot_with_baodautu: {str(e)}")
+        print(f"Traceback: {traceback.format_exc()}")
+        return None
     
     # Set theme
     if dark_theme:
