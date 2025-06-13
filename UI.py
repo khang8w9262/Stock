@@ -3,16 +3,25 @@ sys.stdout.reconfigure(encoding='utf-8')
 
 import numpy as np
 import pandas as pd
-import plotly.graph_objects as go
+import matplotlib.pyplot as plt
+import mplcursors
+import matplotlib.dates
+from matplotlib.widgets import Button, TextBox, RadioButtons
 import warnings
+import threading
+import tkinter as tk
+from tkinter import messagebox
+from tkinter import ttk
+import queue
 import os
+import matplotlib.dates as mdates
 import traceback
 from scipy.interpolate import make_interp_spline, PchipInterpolator
-import json
-from datetime import datetime
+from tqdm import tqdm
+import json  # Thêm dòng này
 
 # Đường dẫn tuyệt đối
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+BASE_DIR = 'D:\\NghienCuu\\Stock'
 
 # Đường dẫn các thư mục
 TRAIN_DIR = os.path.join(BASE_DIR, 'Train')
@@ -44,104 +53,87 @@ from sklearn.metrics import (mean_absolute_percentage_error,
                              r2_score)
 import xgboost as xgb
 
-# Định nghĩa các hàm vẽ đồ thị và cập nhật cho Streamlit
-def update_plot(event, dataset, start_date=None, end_date=None, show_predictions=False, dark_theme=False):
-    """Cập nhật biểu đồ với dữ liệu mới"""
-    try:
-        print(f"\nStarting to update plot for {dataset}")
+# Add DropdownMenu from matplotlib
+from matplotlib.widgets import AxesWidget
+class DropdownMenu(AxesWidget):
+    def __init__(self, ax, options, initial=0, label="", width=0.15, height=0.025,
+                 color='0.95', hovercolor='0.75', fontsize=10):
+        AxesWidget.__init__(self, ax)
+        self.options = options
+        self.current_option = initial
+        self.label = label
+        self.width = width
+        self.height = height
+        self.color = color
+        self.hovercolor = hovercolor
+        self.fontsize = fontsize
+        self.expanded = False
+        self.observers = {}
         
-        # Build file paths
-        file_path_train = os.path.join(TRAIN_DIR, f"{dataset}.csv")
-        file_path_display = os.path.join(VE_DIR, f"{dataset}_TT.csv")
+        self._create_buttons()
+        self.connect_event('button_press_event', self._on_click)
         
-        print(f"Checking files:\n- Train: {file_path_train}\n- Display: {file_path_display}")
+    def _create_buttons(self):
+        # Main button
+        self.ax_main = plt.axes([self.ax.get_position().x0, 
+                                 self.ax.get_position().y0 + self.ax.get_position().height - self.height,
+                                 self.width, self.height])
+        self.main_button = Button(self.ax_main, f"{self.label}{self.options[self.current_option]}", 
+                                 color=self.color, hovercolor=self.hovercolor)
+        self.main_button.label.set_fontsize(self.fontsize)
         
-        # Validate files exist
-        if not os.path.exists(file_path_train):
-            raise FileNotFoundError(f"Train file not found: {file_path_train}")
-        if not os.path.exists(file_path_display):
-            raise FileNotFoundError(f"Display file not found: {file_path_display}")
-
-        # Read data
-        df_train = pd.read_csv(file_path_train)
-        df_display = pd.read_csv(file_path_display)
-
-        # Convert dates
-        df_train['Date'] = pd.to_datetime(df_train['Ngày'], format='%d/%m/%Y')
-        df_display['Date'] = pd.to_datetime(df_display['Ngày'], format='%d/%m/%Y')
-
-        # Filter by date range if provided
-        if start_date and end_date:
-            df_display = df_display[(df_display['Date'] >= start_date) & (df_display['Date'] <= end_date)]
-
-        # Create figure
-        fig = go.Figure()
-
-        # Add actual prices
-        fig.add_trace(go.Scatter(
-            x=df_display['Date'],
-            y=df_display['Lần cuối'],
-            name='Giá thực tế',
-            line=dict(color='blue', width=2)
-        ))
-
-        # Add predictions if requested
-        if show_predictions:
-            models = load_models(dataset)
-            colors = {'rf': 'red', 'xgb': 'orange', 'lgb': 'green', 'dt': 'purple'}
+        # Option buttons (initially hidden)
+        self.ax_options = []
+        self.option_buttons = []
+        for i, option in enumerate(self.options):
+            ax_opt = plt.axes([self.ax.get_position().x0, 
+                              self.ax.get_position().y0 + self.ax.get_position().height - self.height*(i+2),
+                              self.width, self.height])
+            btn = Button(ax_opt, option, color=self.color, hovercolor=self.hovercolor)
+            btn.label.set_fontsize(self.fontsize)
+            self.ax_options.append(ax_opt)
+            self.option_buttons.append(btn)
+            ax_opt.set_visible(False)
             
-            for model_name, model in models.items():
-                predictions = get_predictions(model, df_display, dataset)
-                if predictions is not None and len(predictions) > 0:
-                    fig.add_trace(go.Scatter(
-                        x=df_display['Date'][-len(predictions):],
-                        y=predictions,
-                        name=f'Dự báo {model_name.upper()}',
-                        line=dict(color=colors.get(model_name, 'gray'), dash='dash')
-                    ))
-
-        # Update layout
-        fig.update_layout(
-            title=f'Biểu đồ giá {dataset}',
-            xaxis_title='Ngày',
-            yaxis_title='Giá',
-            template='plotly_dark' if dark_theme else 'plotly_white',
-            showlegend=True,
-            legend=dict(
-                yanchor="top",
-                y=0.99,
-                xanchor="left",
-                x=1.05
-            ),
-            margin=dict(r=150)
-        )
-
-        return fig
-
-    except Exception as e:
-        print(f"Error in update_plot: {str(e)}")
-        print(f"Traceback: {traceback.format_exc()}")
-        return None
-
-# Function to check if models exist and are valid
-def check_models_exist(stock_name):
-    """Check if all required models exist for a stock"""
-    models_dir = os.path.join(BASE_DIR, 'models')
-    required_files = [
-        f'{stock_name}_rf_model.joblib',
-        f'{stock_name}_xgb_model.joblib',
-        f'{stock_name}_lgb_model.joblib',
-        f'{stock_name}_dt_model.joblib',
-        f'{stock_name}_scaler.joblib',
-        f'{stock_name}_feature_order.joblib'
-    ]
+    def _on_click(self, event):
+        if event.inaxes == self.ax_main:
+            # Toggle dropdown
+            self.expanded = not self.expanded
+            for ax in self.ax_options:
+                ax.set_visible(self.expanded)
+            plt.draw()
+        elif self.expanded:
+            for i, ax in enumerate(self.ax_options):
+                if event.inaxes == ax:
+                    self.current_option = i
+                    self.main_button.label.set_text(f"{self.label}{self.options[i]}")
+                    self.expanded = False
+                    for ax in self.ax_options:
+                        ax.set_visible(False)
+                    plt.draw()
+                    self._process_observers()
+                    break
     
-    missing_files = []
-    for file in required_files:
-        if not os.path.exists(os.path.join(models_dir, file)):
-            missing_files.append(file)
-    
-    return len(missing_files) == 0
+    def on_changed(self, func):
+        self.observers[func] = func
+        
+    def _process_observers(self):
+        for func in self.observers.values():
+            func(self.options[self.current_option])
+            
+    def set_visible(self, visible):
+        self.ax_main.set_visible(visible)
+        if not visible:
+            self.expanded = False
+            for ax in self.ax_options:
+                ax.set_visible(False)
+        plt.draw()
+
+# ---------------------------
+# Initialize Tkinter root for loading window and error messages
+# ---------------------------
+root = tk.Tk()
+root.withdraw()
 
 # ---------------------------
 # Create a queue for communication between threads
@@ -621,8 +613,16 @@ def update_plot(event, dataset, start_date=None, end_date=None, show_predictions
             df_display = df_display[(df_display['Date'] >= start_date) & (df_display['Date'] <= end_date)]
             print(f"Filtered display data: {len(df_display)} rows")
 
-        # Create Plotly figure
-        fig = go.Figure()
+        # Create figure with larger size
+        plt.clf()
+        fig = plt.figure(figsize=(15, 8))
+        ax = fig.add_subplot(111)
+        
+        # Set dark theme if requested
+        if dark_theme:
+            plt.style.use('dark_background')
+            ax.set_facecolor('#2d2d2d')
+            fig.patch.set_facecolor('#2d2d2d')
 
         # Plot actual prices
         ax.plot(df_display['Date'], df_display['Lần cuối'], 
@@ -881,59 +881,10 @@ def apply_baodautu_worker(stock_name, loading_root, start_date=None, end_date=No
         update_queue.put(lambda: safe_destroy(loading_root))
 
 def update_plot_with_baodautu(stock_name, baodautu_predictions, start_date=None, end_date=None, dark_theme=False):
-    """Update chart with forecast data from Báo Đầu Tư combined with ML model"""
-    try:
-        # Read display data
-        file_path_display = os.path.join(VE_DIR, f"{stock_name}_TT.csv")
-        df_display = pd.read_csv(file_path_display)
-        df_display['Date'] = pd.to_datetime(df_display['Ngày'], format='%d/%m/%Y')
-        
-        # Filter by date range if provided
-        if start_date and end_date:
-            df_display = df_display[(df_display['Date'] >= start_date) & (df_display['Date'] <= end_date)]
-
-        # Create figure
-        fig = go.Figure()
-
-        # Add actual prices
-        fig.add_trace(go.Scatter(
-            x=df_display['Date'],
-            y=df_display['Lần cuối'],
-            name='Giá thực tế',
-            line=dict(color='blue', width=2)
-        ))
-
-        # Add Báo Đầu Tư predictions
-        dates, prices = zip(*baodautu_predictions)
-        fig.add_trace(go.Scatter(
-            x=dates,
-            y=prices,
-            name='Dự báo Báo Đầu Tư',
-            line=dict(color='red', dash='dash')
-        ))
-
-        # Update layout
-        fig.update_layout(
-            title=f'Biểu đồ giá {stock_name} với dự báo từ Báo Đầu Tư',
-            xaxis_title='Ngày',
-            yaxis_title='Giá',
-            template='plotly_dark' if dark_theme else 'plotly_white',
-            showlegend=True,
-            legend=dict(
-                yanchor="top",
-                y=0.99,
-                xanchor="left",
-                x=1.05
-            ),
-            margin=dict(r=150)
-        )
-
-        return fig
-
-    except Exception as e:
-        print(f"Error in update_plot_with_baodautu: {str(e)}")
-        print(f"Traceback: {traceback.format_exc()}")
-        return None
+    """
+    Update chart with forecast data from Báo Đầu Tư combined with ML model
+    """
+    global current_dataset, last_annotation, motion_cid, metrics_supplement, metrics_normal, metrics_future, error_df
     
     # Set theme
     if dark_theme:
@@ -1685,15 +1636,10 @@ def check_models_features(model_name, dataset, features):
         print(f"Lỗi khi kiểm tra features của mô hình {model_name}: {e}")
         return False
 
-# Initialize necessary paths
-def init():
-    """Initialize necessary paths and configurations"""
-    global BASE_DIR, TRAIN_DIR, VE_DIR, MODELS_DIR
-    
-    # Ensure directories exist
-    for dir_path in [TRAIN_DIR, VE_DIR, MODELS_DIR]:
-        if not os.path.exists(dir_path):
-            os.makedirs(dir_path)
-            print(f"Created directory: {dir_path}")
+# Thêm vào cuối file, trước plt.show()
+calculate_system_metrics()
 
-init()
+# Clear models directory at startup
+clear_models_directory()
+
+plt.show()
