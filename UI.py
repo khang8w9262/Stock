@@ -39,7 +39,7 @@ BAODAUTU_CHUYEN = os.path.join(BAODAUTU_DIR, 'baodautu_chuyen.csv')
 # Import backend functions from back.py
 from back import (load_data, create_advanced_features, simulate_future_price, 
                  build_lightgbm_model, load_model, save_model, load_scaler, save_scaler,
-                 find_baodautu_prediction)  # Add find_baodautu_prediction to imports
+                 find_baodautu_prediction, load_feature_order)  # Add required imports
 
 # Import metrics calculation function
 from metrics_utils import calculate_prediction_metrics
@@ -336,6 +336,7 @@ current_dataset = stock_files[0] if stock_files else 'AMZN'
 last_annotation = None
 motion_cid = None  # ID of motion_notify_event
 error_df = None    # Variable to store error table
+dark_mode = False  # Biến theo dõi chế độ dark mode
 
 # Add global variables for storing metrics
 metrics_normal = None
@@ -345,6 +346,38 @@ metrics_supplement = None
 # Add new button for metrics comparison
 ax_button_metrics = plt.axes([0.65, 0.92, 0.10, 0.05])  # Position next to other buttons
 button_metrics = Button(ax_button_metrics, 'Metrics')
+
+# Add new button for dark mode toggle
+ax_button_dark_mode = plt.axes([0.10, 0.92, 0.10, 0.05])  # Position on the left side
+button_dark_mode = Button(ax_button_dark_mode, 'Theme')
+
+def toggle_dark_mode(event):
+    """Toggle between dark and light theme"""
+    global dark_mode
+    dark_mode = not dark_mode
+    
+    if dark_mode:
+        # Apply dark theme
+        plt.style.use('dark_background')
+        fig.patch.set_facecolor('#0E1117')  # Dark background
+        ax.set_facecolor('#0E1117')
+        if ax_table is not None:
+            ax_table.set_facecolor('#0E1117')
+        button_dark_mode.label.set_text('Light')
+    else:
+        # Apply light theme
+        plt.style.use('default')
+        fig.patch.set_facecolor('white')
+        ax.set_facecolor('white')
+        if ax_table is not None:
+            ax_table.set_facecolor('white')
+        button_dark_mode.label.set_text('Dark')
+    
+    # Update plot with current dataset
+    update_plot(None, current_dataset, dark_theme=dark_mode)
+    
+# Connect dark mode button event
+button_dark_mode.on_clicked(toggle_dark_mode)
 
 def store_future_metrics(metrics_dict):
     """
@@ -615,6 +648,20 @@ def update_plot(event, dataset, start_date=None, end_date=None, show_predictions
 
         # Create figure with larger size
         plt.clf()
+        
+        # Apply theme
+        if dark_theme:
+            plt.style.use('dark_background')
+            fig.patch.set_facecolor('#0E1117')
+            ax.set_facecolor('#0E1117')
+            if ax_table is not None:
+                ax_table.set_facecolor('#0E1117')
+        else:
+            plt.style.use('default')
+            fig.patch.set_facecolor('white')
+            ax.set_facecolor('white')
+            if ax_table is not None:
+                ax_table.set_facecolor('white')
         fig = plt.figure(figsize=(15, 8))
         ax = fig.add_subplot(111)
         
@@ -784,7 +831,7 @@ def apply_baodautu_worker(stock_name, loading_root, start_date=None, end_date=No
                     baodautu_file = loc
                     break
             else:
-                error_msg = "baodautu_chuyen.csv not found in any checked location.\n" + \
+                error_msg = "baodatu_chuyen.csv not found in any checked location.\n" + \
                            "This file is required for forecast data. Please ensure it exists."
                 update_queue.put(lambda: show_error(error_msg))
                 update_queue.put(lambda: safe_destroy(loading_root))
@@ -963,20 +1010,20 @@ def update_plot_with_baodautu(stock_name, baodautu_predictions, start_date=None,
         
         # DataFrame for all data (both file and hardcoded)
         all_dates, all_values = zip(*file_predictions + hardcoded_predictions) if (file_predictions or hardcoded_predictions) else ([], [])
-        baodautu_df = pd.DataFrame({'Date': all_dates, 'Price': all_values})
+        baodatu_df = pd.DataFrame({'Date': all_dates, 'Price': all_values})
         
-        print(f"Total number of predictions: {len(baodautu_df)}")
+        print(f"Total number of predictions: {len(baodatu_df)}")
         
         # Kiểm tra xem có dữ liệu dự báo không
-        if baodautu_df.empty:
+        if baodatu_df.empty:
             show_error(f"Không tìm thấy dữ liệu dự báo nào từ Báo Đầu Tư trong khoảng thời gian đã chọn.")
             return
             
         # Lọc dữ liệu theo khoảng thời gian đã chọn thay vì danh sách ngày cố định
-        baodautu_df = baodautu_df[(baodautu_df['Date'] >= start_date) & (baodautu_df['Date'] <= end_date)]
-        print(f"Số dự báo trong khoảng thời gian {start_date.strftime('%d/%m/%Y')} - {end_date.strftime('%d/%m/%Y')}: {len(baodautu_df)}")
+        baodatu_df = baodatu_df[(baodatu_df['Date'] >= start_date) & (baodatu_df['Date'] <= end_date)]
+        print(f"Số dự báo trong khoảng thời gian {start_date.strftime('%d/%m/%Y')} - {end_date.strftime('%d/%m/%Y')}: {len(baodatu_df)}")
         
-        if baodautu_df.empty:
+        if baodatu_df.empty:
             show_error(f"Không tìm thấy dữ liệu dự báo nào từ Báo Đầu Tư trong khoảng thời gian đã chọn.")
             return
             
@@ -1073,8 +1120,8 @@ def update_plot_with_baodautu(stock_name, baodautu_predictions, start_date=None,
         print(f"Đã tải thành công các mô hình cho {stock_name}")
         
         # Get the baodatu data points as anchors
-        anchor_dates = baodautu_df['Date'].sort_values().tolist()
-        anchor_prices = baodautu_df.sort_values('Date')['Price'].tolist()
+        anchor_dates = baodatu_df['Date'].sort_values().tolist()
+        anchor_prices = baodatu_df.sort_values('Date')['Price'].tolist()
         
         # Generate more realistic price movements between anchor points
         for model_name in models.keys():
@@ -1271,7 +1318,7 @@ def update_plot_with_baodautu(stock_name, baodautu_predictions, start_date=None,
                    linewidth=2.5)
 
         # Plot Báo Đầu Tư predictions
-        ax.scatter(baodautu_df['Date'], baodautu_df['Price'],
+        ax.scatter(baodatu_df['Date'], baodatu_df['Price'],
                   label='Dự báo Báo Đầu Tư',
                   color='black', marker='o', s=50)
 
@@ -1365,7 +1412,7 @@ def update_plot_with_baodautu(stock_name, baodautu_predictions, start_date=None,
         
         # Show success message
         number_of_file_predictions = len(file_df)
-        number_of_predictions = len(baodautu_df)
+        number_of_predictions = len(baodatu_df)
         show_success(f"Improved forecast using {number_of_file_predictions} data points from file and {number_of_predictions - number_of_file_predictions} supplemental data points for {stock_name}")
         
         # Calculate metrics if we have actual data to compare against
@@ -1460,7 +1507,7 @@ def ok_button_clicked(event):
 
 # Handler for stock selection from dropdown
 def on_stock_selected(stock_name):
-    global current_dataset
+    global current_dataset, dark_mode
     
     if stock_name and stock_name in stock_files:
         # Check if required files exist
@@ -1478,8 +1525,8 @@ def on_stock_selected(stock_name):
         # Update current dataset
         current_dataset = stock_name
         
-        # Update chart with selected stock
-        update_plot(None, stock_name)
+        # Update chart with selected stock, preserving dark mode setting
+        update_plot(None, stock_name, dark_theme=dark_mode)
     else:
         show_error(f"Data not found for stock: {stock_name}")
 
@@ -1490,7 +1537,7 @@ button_error.on_clicked(apply_baodautu_predictions)  # Use Báo Đầu Tư forec
 dropdown_menu.on_changed(on_stock_selected)
 
 # Display initial data (without forecast)
-update_plot(None, current_dataset)
+update_plot(None, current_dataset, dark_theme=dark_mode)
 
 def save_metrics_to_file():
     """
@@ -1636,21 +1683,10 @@ def check_models_features(model_name, dataset, features):
         print(f"Lỗi khi kiểm tra features của mô hình {model_name}: {e}")
         return False
 
-# Check if running in Streamlit environment
-def is_streamlit():
-    try:
-        # Check if st is in globals
-        import streamlit as st
-        return True
-    except:
-        return False
+# Thêm vào cuối file, trước plt.show()
+calculate_system_metrics()
 
-# Only do these operations when not running in Streamlit
-if not is_streamlit():
-    # Thêm vào cuối file, trước plt.show()
-    calculate_system_metrics()
-    
-    # Clear models directory at startup
-    clear_models_directory()
-    
-    plt.show()
+# Clear models directory at startup
+clear_models_directory()
+
+plt.show()
