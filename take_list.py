@@ -1,5 +1,6 @@
 import os
 import re
+import pkg_resources
 
 SKIP_DIRS = {'.venv', '__pycache__', '.git', '.ipynb_checkpoints'}
 
@@ -34,10 +35,21 @@ def find_all_imports(root_dir="."):
                 all_imports.update(find_imports_in_file(filepath))
     return all_imports
 
+def get_installed_version(lib):
+    try:
+        dist = pkg_resources.get_distribution(lib)
+        return dist.version
+    except Exception:
+        return None
+
 def update_requirements(imports, req_file="requirements.txt"):
     with open(req_file, "w", encoding="utf-8") as f:
         for lib in sorted(imports):
-            f.write(f"{lib}\n")
+            version = get_installed_version(lib)
+            if version:
+                f.write(f"{lib}=={version}\n")
+            else:
+                f.write(f"{lib}\n")
     print(f"Đã cập nhật {req_file} với {len(imports)} thư viện.")
 
 if __name__ == "__main__":

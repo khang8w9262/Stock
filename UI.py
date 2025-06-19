@@ -101,4 +101,3 @@ if st.checkbox("Xem dữ liệu gốc"):
     else:
         st.warning("Không tìm thấy file dữ liệu hiển thị.")
 
-# Gợi ý: Bạn có thể bổ sung thêm các nút, bảng, hoặc các chức năng dự báo nâng cao khác bằng các widget của Streamlit.
