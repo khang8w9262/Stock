@@ -1,27 +1,41 @@
-# Core Libraries
-streamlit>=1.27.0
-pandas>=2.0.0
-numpy>=1.23.0
-
-# Machine Learning
-scikit-learn>=1.0.2
-xgboost>=1.7.0
-lightgbm>=4.0.0
-
-# Visualization
-matplotlib>=3.7.0
-plotly>=5.13.0
-mplcursors>=0.5.2
-
-# Data Processing
-joblib>=1.3.0
-scipy>=1.10.0
-tqdm>=4.65.0
-
-# Web & APIs
-requests>=2.31.0
-beautifulsoup4>=4.12.0
-
-# Date and Time Handling
-python-dateutil>=2.8.2
-pytz>=2023.3
+UI
+back
+bs4
+cao
+chuyen
+csv
+datetime
+hashlib
+joblib
+json
+lightgbm
+matplotlib
+metrics_utils
+mplcursors
+numpy
+os
+pandas
+plotly
+prophet
+queue
+random
+re
+requests
+retrying
+scipy
+selenium
+seleniumbase
+sklearn
+streamlit
+streamlit_app
+streamlit_tk_compat
+sys
+tensorflow
+threading
+time
+tkinter
+tqdm
+traceback
+typing
+warnings
+xgboost

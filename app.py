@@ -1,16 +1,28 @@
-import streamlit as st
-import pandas as pd
 import os
 import sys
 import json
+import traceback
 from datetime import date, datetime
+
+# Áp dụng các sửa đổi tương thích trước khi import các thư viện khác
+try:
+    from streamlit_tk_compat import streamlit_fix_imports, show_error, show_success, show_warning, is_streamlit_cloud
+    fixes_applied = streamlit_fix_imports()
+    
+    if fixes_applied:
+        print("Đã áp dụng các sửa đổi tương thích cho môi trường cloud")
+except Exception as e:
+    print(f"Lỗi khi áp dụng sửa đổi tương thích: {e}")
+
+# Tiếp tục import các thư viện còn lại
+import streamlit as st
+import pandas as pd
+import numpy as np
 import matplotlib.pyplot as plt
 import mplcursors
 import matplotlib.dates as mdates
-import numpy as np
 import warnings
 from sklearn.metrics import mean_squared_error, mean_absolute_error, mean_absolute_percentage_error, r2_score
-import traceback
 import plotly.graph_objects as go
 
 # Lấy đường dẫn tương đối của thư mục hiện tại
@@ -96,8 +108,8 @@ if critical_errors:
 sys.path.append(os.path.abspath('.'))
 
 # Import các hàm cần thiết
-from cao import crawl_baodautu
-import chuyen
+from Baodautu.cao import crawl_baodautu
+import Baodautu.chuyen
 from back import (
     get_train_files,
     load_data,
@@ -111,7 +123,24 @@ from back import (
 )
 
 # Import UI plotting functions
-from UI import update_plot, update_plot_with_baodautu
+# Kiểm tra môi trường trước khi import từ UI.py
+try:
+    # Nếu đang chạy trên Streamlit Cloud, sử dụng các hàm cloud-compatible
+    if is_streamlit_cloud():
+        # Import các hàm tương thích từ mô-đun streamlit
+        from streamlit_app import streamlit_forecast as update_plot
+        from streamlit_app import streamlit_forecast_with_baodautu as update_plot_with_baodautu
+        print("Using Streamlit Cloud compatible functions")
+    else:
+        # Import các hàm gốc từ UI.py khi chạy cục bộ
+        from UI import update_plot, update_plot_with_baodautu
+except Exception as e:
+    print(f"Error importing UI functions: {e}")
+    # Định nghĩa các hàm giả nếu cần
+    def update_plot(*args, **kwargs):
+        st.error("Unable to load plotting functions")
+    def update_plot_with_baodautu(*args, **kwargs):
+        st.error("Unable to load Baodautu plotting functions")
 
 def setup_directories():
     """Kiểm tra và tạo các thư mục cần thiết"""
