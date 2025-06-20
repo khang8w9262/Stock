@@ -79,13 +79,13 @@ def verify_directory(dir_path):
 
 # Set page config FIRST
 st.set_page_config(
-    page_title="Dự báo chứng khoán Báo Đầu Tư",
+    page_title="Dự báo chứng khoán ",
     layout="wide",
     initial_sidebar_state="expanded",
     menu_items={
         'Get Help': 'https://www.example.com',
         'Report a bug': "https://www.example.com/bug",
-        'About': "# Hệ thống dự báo chứng khoán Báo Đầu Tư. Đây là một ứng dụng demo."
+        'About': "# Hệ thống dự báo chứng khoán B. Đây là một ứng dụng demo."
     }
 )
 
@@ -116,6 +116,24 @@ st.markdown("""
     .st-emotion-cache-1v0mbdj:hover, .st-emotion-cache-19n24yr:hover {
         background-color: #009ACD;
         color: #FFFFFF;
+    }
+    /* Uniform feature boxes on intro page */
+    .stFeatureBox {
+        min-height: 260px;
+        height: 100%;
+        border: 1.5px solid #444;
+        border-radius: 12px;
+        padding: 18px 22px 14px 22px;
+        margin-bottom: 12px;
+        background: #18191c;
+        box-shadow: 0 2px 8px 0 rgba(0,0,0,0.08);
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+    }
+    .stFeatureBox h4, .stFeatureBox h3 {
+        margin-top: 0;
+        margin-bottom: 10px;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -252,14 +270,26 @@ with st.sidebar:
     st.markdown("### Menu chức năng")
     selected_function = st.radio(
         label="Chọn chức năng:",
-        options=["1. Dự báo giá cổ phiếu", 
-                "2. Phân tích sai số", 
-                "3. Quản lý dữ liệu",
-                "4. Cài đặt hệ thống"]
+        options=["0. Giới thiệu",
+                 "1. Dự báo giá cổ phiếu", 
+                 "2. Phân tích sai số", 
+                 "3. Quản lý dữ liệu",
+                 "4. Cài đặt hệ thống"],
+        index=0  # Set default index to 0 for "Giới thiệu"
     )
 
+    # Nút huấn luyện lại và thông tin debug
+    if st.button("Huấn luyện lại mô hình"):
+        with st.spinner("Đang huấn luyện lại các mô hình..."):
+            retrain_all_models()
+        st.success("Đã huấn luyện lại tất cả mô hình!")
+        st.cache_data.clear()
+    
+    st.markdown("### Debug Information")
+    debug_container = st.expander("Show Debug Info", expanded=False)
+
 # Tạo giao diện chính
-st.title("Hệ thống dự báo chứng khoán Báo Đầu Tư")
+st.title("Hệ thống dự báo chứng khoán ")
 
 def load_models(dataset):
     """Load all models for a given dataset"""
@@ -665,7 +695,52 @@ def plot_predictions_with_baodautu(dataset, start_date, end_date, baodautu_predi
         return None
 
 # Hiển thị nội dung tương ứng với chức năng được chọn
-if selected_function == "1. Dự báo giá cổ phiếu":
+if selected_function == "0. Giới thiệu":
+    st.markdown("## Chào mừng đến với Hệ thống Dự báo Chứng khoán Báo Đầu Tư")
+    st.markdown("---")
+    st.info("""
+    Hệ thống này được thiết kế để cung cấp các công cụ mạnh mẽ cho việc phân tích và dự báo giá cổ phiếu, 
+    kết hợp giữa các mô hình học máy tiên tiến và dữ liệu tài chính từ các nguồn đáng tin cậy.
+    """)
+    st.markdown("### Các chức năng chính:")
+    col1, col2 = st.columns(2)
+    with col1:
+        st.markdown('<div class="stFeatureBox">', unsafe_allow_html=True)
+        st.markdown("#### 📈 1. Dự báo giá cổ phiếu")
+        st.write("""
+        - **Dự báo đa mô hình**: Sử dụng các mô hình Random Forest, XGBoost, LightGBM và Decision Tree để đưa ra dự báo.
+        - **Trực quan hóa tương tác**: Biểu đồ giá lịch sử và dự báo cho phép bạn dễ dàng so sánh và phân tích.
+        - **Tích hợp Báo Đầu Tư**: Neo dự báo theo các điểm dữ liệu từ tin tức tài chính để có cái nhìn sâu sắc hơn.
+        """)
+        st.markdown('</div>', unsafe_allow_html=True)
+    with col2:
+        st.markdown('<div class="stFeatureBox">', unsafe_allow_html=True)
+        st.markdown("#### 📊 2. Phân tích sai số")
+        st.write("""
+        - **Đánh giá hiệu suất**: Xem các chỉ số đo lường chi tiết như MSE, MAE, RMSE, MAPE và R² cho từng mô hình.
+        - **So sánh mô hình**: Dễ dàng so sánh hiệu quả của các thuật toán dự báo khác nhau.
+        """)
+        st.markdown('</div>', unsafe_allow_html=True)
+    col3, col4 = st.columns(2)
+    with col3:
+        st.markdown('<div class="stFeatureBox">', unsafe_allow_html=True)
+        st.markdown("#### 🗃️ 3. Quản lý dữ liệu")
+        st.write("""
+        - **Cập nhật tự động**: Công cụ để cào và xử lý dữ liệu mới từ trang Báo Đầu Tư.
+        - **Xem dữ liệu thô**: Truy cập và xem lại các bảng dữ liệu đã được thu thập.
+        """)
+        st.markdown('</div>', unsafe_allow_html=True)
+    with col4:
+        st.markdown('<div class="stFeatureBox">', unsafe_allow_html=True)
+        st.markdown("#### ⚙️ 4. Cài đặt hệ thống")
+        st.write("""
+        - **Huấn luyện lại mô hình**: Tùy chọn để huấn luyện lại tất cả các mô hình trên bộ dữ liệu mới nhất.
+        - **Thông tin gỡ lỗi**: Hiển thị thông tin chi tiết về quá trình hoạt động của hệ thống.
+        """)
+        st.markdown('</div>', unsafe_allow_html=True)
+    st.success("Vui lòng chọn một chức năng từ **Menu chức năng** ở thanh bên để bắt đầu!")
+
+elif selected_function == "1. Dự báo giá cổ phiếu":
     # Get list of stocks
     try:
         if not data_status['train_files']:
@@ -712,13 +787,13 @@ if selected_function == "1. Dự báo giá cổ phiếu":
                     end_date = st.date_input("Ngày kết thúc", value=datetime(2025, 4, 8), format="DD/MM/YYYY")
 
             # Debug info
-            if st.sidebar.button("Huấn luyện lại mô hình"):
-                with st.spinner("Đang huấn luyện lại các mô hình..."):
-                    retrain_all_models()
-                st.success("Đã huấn luyện lại tất cả mô hình!")
-                st.cache_data.clear()
-            st.sidebar.markdown("### Debug Information")
-            debug_container = st.sidebar.expander("Show Debug Info", expanded=False)
+            with debug_container:
+                st.write("Selected Stock:", selected_stock)
+                st.write("Start Date:", start_date)
+                st.write("End Date:", end_date)
+                st.write("File Paths:")
+                st.write(f"- Train: {os.path.join(TRAIN_DIR, f'{selected_stock}.csv')}")
+                st.write(f"- Display: {os.path.join(VE_DIR, f'{selected_stock}_TT.csv')}")
 
             # Add buttons for additional functionality
             col_btn1, col_btn2, col_btn3 = st.columns([1, 1, 2])
@@ -731,15 +806,6 @@ if selected_function == "1. Dự báo giá cổ phiếu":
             metrics_container = st.container()
             # Tạo container cho biểu đồ
             chart_container = st.container()
-
-            # Debug info
-            with debug_container:
-                st.write("Selected Stock:", selected_stock)
-                st.write("Start Date:", start_date)
-                st.write("End Date:", end_date)
-                st.write("File Paths:")
-                st.write(f"- Train: {os.path.join(TRAIN_DIR, f'{selected_stock}.csv')}")
-                st.write(f"- Display: {os.path.join(VE_DIR, f'{selected_stock}_TT.csv')}")
 
             # Hiển thị biểu đồ
             if start_date <= end_date:
@@ -853,7 +919,7 @@ elif selected_function == "3. Quản lý dữ liệu":
                         st.error(f"Không tìm thấy file {BAODAUTU_ARTICLES}. Đường dẫn hiện tại: {os.path.abspath(BAODAUTU_ARTICLES)}")
                 except Exception as e:
                     st.error(f"Lỗi khi chuyển đổi dữ liệu: {str(e)}")
-    st.subheader("Bảng dữ liệu baodautu_articles.csv")
+    st.subheader("DỮ liệu vào được từ Báo đầu tư")
     try:
         if os.path.exists(BAODAUTU_ARTICLES):
             df1 = pd.read_csv(BAODAUTU_ARTICLES, on_bad_lines='skip')
@@ -862,7 +928,7 @@ elif selected_function == "3. Quản lý dữ liệu":
             st.warning("Chưa có dữ liệu baodautu_articles.csv")
     except Exception as e:
         st.error(f"Lỗi khi đọc baodautu_articles.csv: {e}")
-    st.subheader("Bảng dữ liệu baodautu_chuyen.csv")
+    st.subheader("Dữ liệu sau khi chuyển đổi")
     try:
         if os.path.exists(BAODAUTU_CHUYEN):
             df2 = pd.read_csv(BAODAUTU_CHUYEN, on_bad_lines='skip')
