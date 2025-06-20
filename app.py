@@ -662,11 +662,14 @@ if selected_function == "1. Dự báo giá cổ phiếu":
             with st.container():
                 col1, col2, col3, col4 = st.columns([2, 1.5, 1.5, 1])
                 with col1:
-                    selected_stock = st.selectbox("Chọn mã chứng khoán", stock_names)
+                    default_stock_index = 0
+                    if "HNX-Index" in stock_names:
+                        default_stock_index = stock_names.index("HNX-Index")
+                    selected_stock = st.selectbox("Chọn mã chứng khoán", stock_names, index=default_stock_index)
                 with col2:
-                    start_date = st.date_input("Ngày bắt đầu", value=date.today(), format="DD/MM/YYYY")
+                    start_date = st.date_input("Ngày bắt đầu", value=datetime(2025, 3, 3), format="DD/MM/YYYY")
                 with col3:
-                    end_date = st.date_input("Ngày kết thúc", value=date.today() + pd.Timedelta(days=30), format="DD/MM/YYYY")
+                    end_date = st.date_input("Ngày kết thúc", value=datetime(2025, 4, 8), format="DD/MM/YYYY")
 
             # Debug info
             if st.sidebar.button("Huấn luyện lại mô hình"):
