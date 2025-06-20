@@ -33,7 +33,7 @@ ENV/
 *.swo
 
 # Streamlit
-# .streamlit/
+.streamlit/
 
 # Generated files by app
 *.csv
@@ -46,4 +46,3 @@ ENV/
 
 # CatBoost logs
 catboost_info/
-

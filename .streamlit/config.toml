@@ -2,7 +2,7 @@
 [server]
 # If true, will watch the app directory and app.py for changes.
 # Default: true
-# watchPatterns = ["*.py"]
+watchPatterns = ["*.py"]
 
 # URL prefixes for static paths.
 # Default: none
@@ -10,11 +10,11 @@ enableStaticServing = true
 
 [theme]
 # Primary accent color for interactive elements.
-primaryColor = "#4C82F7"
+primaryColor = "#1E88E5"
 # Background color for the main content area.
 backgroundColor = "#0E1117"
 # Background color used for the sidebar and most interactive widgets.
-secondaryBackgroundColor = "#31333F"
+secondaryBackgroundColor = "#262730"
 # Color used for almost all text.
 textColor = "#FFFFFF"
 # Font family for all text in the app, except code blocks.

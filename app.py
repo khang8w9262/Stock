@@ -28,14 +28,6 @@ import plotly.graph_objects as go
 # Lấy đường dẫn tương đối của thư mục hiện tại
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-# --- Kiểm tra môi trường Streamlit Cloud ---
-# Streamlit Cloud đặt biến môi trường này thành 'true'
-IS_STREAMLIT_CLOUD = os.environ.get('STREAMLIT_SERVER_RUNNING_IN_CLOUD', 'false').lower() == 'true'
-if IS_STREAMLIT_CLOUD:
-    print("Đang chạy trên Streamlit Cloud.")
-else:
-    print("Đang chạy trên môi trường cục bộ.")
-
 # Đường dẫn các thư mục chính
 TRAIN_DIR = os.path.join(BASE_DIR, 'Train')
 VE_DIR = os.path.join(BASE_DIR, 'Ve')
@@ -130,8 +122,25 @@ from back import (
     create_advanced_features
 )
 
-# Các hàm UI để vẽ biểu đồ đã được định nghĩa trong file này.
-# Không cần import từ UI.py hoặc các file tương thích cloud khác.
+# Import UI plotting functions
+# Kiểm tra môi trường trước khi import từ UI.py
+try:
+    # Nếu đang chạy trên Streamlit Cloud, sử dụng các hàm cloud-compatible
+    if is_streamlit_cloud():
+        # Import các hàm tương thích từ mô-đun streamlit
+        from streamlit_app import streamlit_forecast as update_plot
+        from streamlit_app import streamlit_forecast_with_baodautu as update_plot_with_baodautu
+        print("Using Streamlit Cloud compatible functions")
+    else:
+        # Import các hàm gốc từ UI.py khi chạy cục bộ
+        from UI import update_plot, update_plot_with_baodautu
+except Exception as e:
+    print(f"Error importing UI functions: {e}")
+    # Định nghĩa các hàm giả nếu cần
+    def update_plot(*args, **kwargs):
+        st.error("Unable to load plotting functions")
+    def update_plot_with_baodautu(*args, **kwargs):
+        st.error("Unable to load Baodautu plotting functions")
 
 def setup_directories():
     """Kiểm tra và tạo các thư mục cần thiết"""
