@@ -2,7 +2,7 @@
 [server]
 # If true, will watch the app directory and app.py for changes.
 # Default: true
-watchPatterns = ["*.py"]
+# watchPatterns = ["*.py"]
 
 # URL prefixes for static paths.
 # Default: none

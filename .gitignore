@@ -46,3 +46,4 @@ ENV/
 
 # CatBoost logs
 catboost_info/
+
