@@ -658,35 +658,24 @@ if selected_function == "1. Dự báo giá cổ phiếu":
         st.warning("Không tìm thấy dữ liệu cổ phiếu đã huấn luyện trong thư mục 'Train'.")
     else:
         try:
-            # Debug info
-            st.sidebar.markdown("### Debug Information")
-            debug_container = st.sidebar.expander("Show Debug Info", expanded=False)
-            
             # Tạo container cho phần controls
             with st.container():
                 col1, col2, col3, col4 = st.columns([2, 1.5, 1.5, 1])
-                
                 with col1:
                     selected_stock = st.selectbox("Chọn mã chứng khoán", stock_names)
-                
                 with col2:
-                    start_date = st.date_input("Ngày bắt đầu", 
-                                             value=date.today(),
-                                             format="DD/MM/YYYY")
-                
+                    start_date = st.date_input("Ngày bắt đầu", value=date.today(), format="DD/MM/YYYY")
                 with col3:
-                    end_date = st.date_input("Ngày kết thúc",
-                                           value=date.today() + pd.Timedelta(days=30),
-                                           format="DD/MM/YYYY")
-                
-                with col4:
-                    st.write("")
-                    st.write("")
-                    if st.button("Huấn luyện lại"):
-                        with st.spinner("Đang huấn luyện lại các mô hình..."):
-                            retrain_all_models()
-                        st.success("Đã huấn luyện lại tất cả mô hình!")
-                        st.cache_data.clear()
+                    end_date = st.date_input("Ngày kết thúc", value=date.today() + pd.Timedelta(days=30), format="DD/MM/YYYY")
+
+            # Debug info
+            if st.sidebar.button("Huấn luyện lại mô hình"):
+                with st.spinner("Đang huấn luyện lại các mô hình..."):
+                    retrain_all_models()
+                st.success("Đã huấn luyện lại tất cả mô hình!")
+                st.cache_data.clear()
+            st.sidebar.markdown("### Debug Information")
+            debug_container = st.sidebar.expander("Show Debug Info", expanded=False)
 
             # Add buttons for additional functionality
             col_btn1, col_btn2, col_btn3 = st.columns([1, 1, 2])
@@ -697,10 +686,9 @@ if selected_function == "1. Dự báo giá cổ phiếu":
 
             # Tạo container cho metrics
             metrics_container = st.container()
-
             # Tạo container cho biểu đồ
             chart_container = st.container()
-            
+
             # Debug info
             with debug_container:
                 st.write("Selected Stock:", selected_stock)
@@ -709,18 +697,16 @@ if selected_function == "1. Dự báo giá cổ phiếu":
                 st.write("File Paths:")
                 st.write(f"- Train: {os.path.join(TRAIN_DIR, f'{selected_stock}.csv')}")
                 st.write(f"- Display: {os.path.join(VE_DIR, f'{selected_stock}_TT.csv')}")
-            
+
             # Hiển thị biểu đồ
             if start_date <= end_date:
                 try:
                     start_date_pd = pd.to_datetime(start_date)
                     end_date_pd = pd.to_datetime(end_date)
-                    
                     with debug_container:
                         st.write("Converted Dates:")
                         st.write(f"- Start: {start_date_pd}")
                         st.write(f"- End: {end_date_pd}")
-                    
                     fig = None
                     # Decide which plot to generate based on the button clicked
                     if supplement_button:
@@ -732,32 +718,27 @@ if selected_function == "1. Dự báo giá cổ phiếu":
                                 if found:
                                     baodautu_predictions.append((current_date, price))
                                 current_date += pd.Timedelta(days=1)
-                            
                             if not baodautu_predictions:
                                 st.warning(f"Không tìm thấy dự báo Báo Đầu Tư cho {selected_stock}. Hiển thị dự báo thông thường.")
                                 fig = plot_predictions(selected_stock, start_date_pd, end_date_pd, show_predictions=True, dark_theme=True)
                             else:
                                 fig = plot_predictions_with_baodautu(selected_stock, start_date_pd, end_date_pd, baodautu_predictions, dark_theme=True)
                     else:
-                         with st.spinner("Đang tạo biểu đồ dự báo..."):
+                        with st.spinner("Đang tạo biểu đồ dự báo..."):
                             fig = plot_predictions(selected_stock, start_date_pd, end_date_pd, show_predictions=True, dark_theme=True)
-
                     if fig is not None:
                         with debug_container:
                             st.write("Figure created successfully")
-                            
                         with chart_container:
                             st.markdown("### Biểu đồ dự báo chi tiết")
                             st.plotly_chart(fig, use_container_width=True)
                     else:
                         st.error("Không thể tạo biểu đồ. Vui lòng kiểm tra debug info để biết thêm chi tiết.")
-                
                 except Exception as e:
                     st.error(f"Lỗi khi tạo biểu đồ: {str(e)}")
                     st.error(f"Chi tiết lỗi: {traceback.format_exc()}")
             else:
                 st.error("Ngày kết thúc phải sau ngày bắt đầu.")
-
         except Exception as e:
             st.error(f"Lỗi không xác định: {str(e)}")
             st.error(f"Chi tiết lỗi: {traceback.format_exc()}")

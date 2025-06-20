@@ -32,8 +32,8 @@ from metrics_utils import calculate_prediction_metrics
 # Load danh sách mã cổ phiếu
 if os.path.exists(TRAIN_DIR):
     stock_files = [f.split('.')[0] for f in os.listdir(TRAIN_DIR) if f.endswith('.csv')]
-    if not stock_files:
-        stock_files = ["AAPL", "MSFT", "GOOGL"]
+        if not stock_files:
+            stock_files = ["AAPL", "MSFT", "GOOGL"]
 else:
     stock_files = ["AAPL", "MSFT", "GOOGL"]
 stock_files.sort()
@@ -56,7 +56,7 @@ if st.button("Dự báo"):
         file_path_display = os.path.join(VE_DIR, f"{stock}_TT.csv")
         if not os.path.exists(file_path_train) or not os.path.exists(file_path_display):
             st.error(f"Không tìm thấy dữ liệu cho {stock}!")
-        else:
+            else:
             df_train = pd.read_csv(file_path_train, encoding='utf-8', sep=',')
             df_display = pd.read_csv(file_path_display, encoding='utf-8', sep=',')
             df_display['Date'] = pd.to_datetime(df_display['Ngày'], format='%d/%m/%Y')
@@ -65,11 +65,11 @@ if st.button("Dự báo"):
             fig, ax = plt.subplots(figsize=(12, 6))
             ax.plot(df_display['Date'], df_display['Lần cuối'], label='Giá thực tế', color='blue', linewidth=2)
             ax.set_title(f'Biểu đồ giá {stock}', fontsize=14)
-            ax.set_xlabel('Ngày', fontsize=12)
-            ax.set_ylabel('Giá', fontsize=12)
-            ax.grid(True, alpha=0.3)
+        ax.set_xlabel('Ngày', fontsize=12)
+        ax.set_ylabel('Giá', fontsize=12)
+        ax.grid(True, alpha=0.3)
             ax.legend(loc='upper left')
-            plt.xticks(rotation=45)
+        plt.xticks(rotation=45)
             st.pyplot(fig)
     except Exception as e:
         st.error(f"Lỗi khi cập nhật biểu đồ: {e}")
@@ -81,15 +81,15 @@ if st.button("Xem metrics"):
     if not os.path.exists(metrics_file):
         st.warning("Không tìm thấy dữ liệu metrics. Vui lòng chạy tính toán metrics trước.")
     else:
-        try:
-            with open(metrics_file, 'r', encoding='utf-8') as f:
-                metrics_data = json.load(f)
+    try:
+        with open(metrics_file, 'r', encoding='utf-8') as f:
+            metrics_data = json.load(f)
             for pred_type, title in {'normal': 'Dự báo thông thường', 'future': 'Dự báo tương lai', 'supplement': 'Dự báo bổ sung'}.items():
                 if pred_type in metrics_data and metrics_data[pred_type]:
                     st.subheader(title)
                     df = pd.DataFrame(metrics_data[pred_type]).T
                     st.dataframe(df)
-        except Exception as e:
+    except Exception as e:
             st.error(f"Lỗi khi đọc metrics: {e}")
 
 # Hiển thị bảng dữ liệu
