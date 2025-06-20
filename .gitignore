@@ -46,3 +46,8 @@ ENV/
 
 # CatBoost logs
 catboost_info/
+
+# Models, metrics, and logs
+models/
+metrics/
+logs/
