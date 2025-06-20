@@ -33,7 +33,7 @@ ENV/
 *.swo
 
 # Streamlit
-.streamlit/
+# .streamlit/
 
 # Generated files by app
 *.csv

@@ -1,0 +1,21 @@
+# Custom environment settings for Streamlit Cloud
+[server]
+# If true, will watch the app directory and app.py for changes.
+# Default: true
+watchPatterns = ["*.py"]
+
+# URL prefixes for static paths.
+# Default: none
+enableStaticServing = true
+
+[theme]
+# Primary accent color for interactive elements.
+primaryColor = "#4C82F7"
+# Background color for the main content area.
+backgroundColor = "#0E1117"
+# Background color used for the sidebar and most interactive widgets.
+secondaryBackgroundColor = "#31333F"
+# Color used for almost all text.
+textColor = "#FFFFFF"
+# Font family for all text in the app, except code blocks.
+font = "sans serif"
