@@ -78,7 +78,47 @@ def verify_directory(dir_path):
     return info
 
 # Set page config FIRST
-st.set_page_config(page_title="Dự báo chứng khoán Báo Đầu Tư", layout="wide")
+st.set_page_config(
+    page_title="Dự báo chứng khoán Báo Đầu Tư",
+    layout="wide",
+    initial_sidebar_state="expanded",
+    menu_items={
+        'Get Help': 'https://www.example.com',
+        'Report a bug': "https://www.example.com/bug",
+        'About': "# Hệ thống dự báo chứng khoán Báo Đầu Tư. Đây là một ứng dụng demo."
+    }
+)
+
+# Apply custom CSS to match the desired theme
+st.markdown("""
+<style>
+    /* Main app background */
+    .stApp {
+        background-color: #0E1117;
+    }
+    /* Sidebar background */
+    .css-1d391kg {
+        background-color: #1C1C1E;
+    }
+    /* Widgets background */
+    .st-bv, .st-bw, .st-cn, .st-co {
+        background-color: #262730;
+    }
+    /* Text color */
+    body, .st-emotion-cache-10trblm, .st-emotion-cache-zq5wmm {
+        color: #FFFFFF;
+    }
+    /* Primary color for buttons and interactive elements */
+    .st-emotion-cache-1v0mbdj, .st-emotion-cache-19n24yr {
+        background-color: #00BFFF;
+        color: #FFFFFF;
+    }
+    .st-emotion-cache-1v0mbdj:hover, .st-emotion-cache-19n24yr:hover {
+        background-color: #009ACD;
+        color: #FFFFFF;
+    }
+</style>
+""", unsafe_allow_html=True)
 
 # Kiểm tra thư mục khi khởi động
 dirs_status = {}
